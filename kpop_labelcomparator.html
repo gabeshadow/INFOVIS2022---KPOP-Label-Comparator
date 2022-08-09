@@ -1,0 +1,1297 @@
+﻿<!DOCTYPE html>
+<html>
+
+<!--
+
+    Project: K-POP Label Comparator
+
+    Author: Gabriele Sbrolli aka "gabeshadow"
+
+    User task:  as a user related to a label, he pretends to visualize
+                an appropriate comparison of his own label with another,
+                and to realize his presence in the K-POP musical context.
+
+    Scope:  Comparator of at most 3 labels managing artists and groups
+            playing kpop music using a "RadarChart" and a table showing
+            the nominal values ​​of the calculated attributes for each label
+            (ex. Quantity of male and female artists, soloists, groups and
+            collaborations with other labels).
+
+    How to use: select the labels from the lists;
+                a RadarChart will represent the quality of the selected labels
+                and also the nominal values ​​are shown in a table.
+
+    Files needed:   2 CSV:
+                    one that contains all the information about individual artists
+                    (typed as 'male', 'female' or 'person'), groups (typed as 'group')
+                    and labels (typed as 'label'), and for each of them an 'id' and
+                    the name of the artist, group or label;
+                    another one that contains all possible management or membership
+                    relationships between entities according to 'id' - 'id'.
+
+-->
+
+<head>
+    <title>KPOP-LABEL COMPARATOR</title>
+</head>
+
+<body>
+
+    <meta charset="utf-8">
+    <link rel="stylesheet" href="https://yui-s.yahooapis.com/pure/0.5.0/pure-min.css">
+    <link rel="stylesheet" href="https://rawgit.com/tpreusse/radar-chart-d3/master/src/radar-chart.css">
+    <script src="https://d3js.org/d3.v3.js"></script>
+    <script src="https://rawgit.com/tpreusse/radar-chart-d3/master/src/radar-chart.js"></script>
+
+    <h1>KPOP - LABEL COMPARATOR</h1>
+    <h2>Choose up to 3 K-Pop labels to compare each other in terms of managed:</h2>
+    <h2>&nbsp;&nbsp;> Male Artists</h2>
+    <h2>&nbsp;&nbsp;> Female Artists</h2>
+    <h2>&nbsp;&nbsp;> Soloists</h2>
+    <h2>&nbsp;&nbsp;> Groups</h2>
+    <h2>&nbsp;&nbsp;> Total amount of artists</h2>
+    <h2>&nbsp;&nbsp;> Collaborations with other labels</h2>
+
+    <br />
+    <br />
+
+    <style>
+
+        body {
+            padding: 50px;
+        }
+
+        .radar-chart .area {
+            fill-opacity: 0.5;
+        }
+
+        .radar-chart.focus .area {
+            fill-opacity: 0.1;
+        }
+
+            .radar-chart.focus .area.focused {
+                fill-opacity: 0.7;
+            }
+
+        .area.selected_01, .selected_01 .circle {
+            fill: #0000ff;
+            stroke: #0000ff;
+            stroke-width: 5;
+        }
+
+        .area.selected_02, .selected_02 .circle {
+            fill: #00ff00;
+            stroke: #00ff00;
+            stroke-width: 5;
+        }
+
+        .area.selected_03, .selected_03 .circle {
+            fill: #ff0000;
+            stroke: #ff0000;
+            stroke-width: 5;
+        }
+
+        .area.selected_none, .none.selected_none {
+            fill: #00000000;
+            stroke: none;
+        }
+    </style>
+
+    <table>
+        <!-- Label Data -->
+        <tr>
+            <td style="height: 50px; font-weight: 700; font-size: 20px; background-color: #0000FF; color: #ffffff" align="left">&nbsp;&nbsp;Cod. 1ST LABEL</td>
+            <td style="height:50px;font-style:italic;font-size:larger;border-color:#000000" align="center">
+                <h3 id="1st_L" contenteditable="true"></h3>
+            </td>
+
+            <td style="height: 50px; font-weight: 700; font-size: 20px;background-color:#00FF00" align="left">&nbsp;&nbsp;Cod. 2ND LABEL</td>
+            <td style="height:50px;font-style:italic;font-size:larger" align="center">
+                <h3 id="2nd_L" contenteditable="true"></h3>
+            </td>
+
+            <td style="height: 50px; font-weight: 700; font-size: 20px; background-color: #FF0000" align="left">&nbsp;&nbsp;Cod. 3RD LABEL</td>
+            <td style="height:50px;font-style:italic;font-size:larger" align="center">
+                <h3 id="3rd_L" contenteditable="true"></h3>
+            </td>
+        </tr>
+        <!-- Male Data -->
+        <tr>
+            <td style="height:50px;font-weight:700;font-size:20px;background-color:#0000FF; color: #ffffff" align="left">&nbsp;&nbsp;MALE</td>
+            <td style="height:50px;font-style:italic;font-size:larger" align="center">
+                <h3 id="1st_M" contenteditable="true"></h3>
+            </td>
+
+            <td style="height:50px;font-weight:700;font-size:20px;background-color:#00FF00" align="left">&nbsp;&nbsp;MALE</td>
+            <td style="height:50px;font-style:italic;font-size:larger" align="center">
+                <h3 id="2nd_M" contenteditable="true"></h3>
+            </td>
+
+            <td style="height: 50px; font-weight: 700; font-size: 20px; background-color: #FF0000" align="left">&nbsp;&nbsp;MALE</td>
+            <td style="height:50px;font-style:italic;font-size:larger" align="center">
+                <h3 id="3rd_M" contenteditable="true"></h3>
+            </td>
+        </tr>
+        <!-- Female Data -->
+        <tr>
+            <td style="height: 50px; font-weight: 700; font-size: 20px; background-color: #0000FF; color: #ffffff" align="left">&nbsp;&nbsp;FEMALE</td>
+            <td style="height:50px;font-style:italic;font-size:larger" align="center">
+                <h3 id="1st_F" contenteditable="true"></h3>
+            </td>
+
+            <td style="height: 50px; font-weight: 700; font-size: 20px; background-color: #00FF00" align="left">&nbsp;&nbsp;FEMALE</td>
+            <td style="height:50px;font-style:italic;font-size:larger" align="center">
+                <h3 id="2nd_F" contenteditable="true"></h3>
+            </td>
+
+            <td style="height: 50px; font-weight: 700; font-size: 20px; background-color: #FF0000" align="left">&nbsp;&nbsp;FEMALE</td>
+            <td style="height:50px;font-style:italic;font-size:larger" align="center">
+                <h3 id="3rd_F" contenteditable="true"></h3>
+            </td>
+        </tr>
+        <!-- SOLOISTS Data -->
+        <tr>
+            <td style="height: 50px; font-weight: 700; font-size: 20px; background-color: #0000FF; color: #ffffff;" align="left">&nbsp;&nbsp;SOLOISTS</td>
+            <td style="height:50px;font-style:italic;font-size:larger" align="center">
+                <h3 id="1st_SA" contenteditable="true"></h3>
+            </td>
+
+            <td style="height: 50px; font-weight: 700; font-size: 20px; background-color: #00FF00" align="left">&nbsp;&nbsp;SOLOISTS</td>
+            <td style="height:50px;font-style:italic;font-size:larger" align="center">
+                <h3 id="2nd_SA" contenteditable="true"></h3>
+            </td>
+
+            <td style="height: 50px; font-weight: 700; font-size: 20px; background-color: #FF0000" align="left">&nbsp;&nbsp;SOLOISTS</td>
+            <td style="height:50px;font-style:italic;font-size:larger" align="center">
+                <h3 id="3rd_SA" contenteditable="true"></h3>
+            </td>
+        </tr>
+        <!-- Groups Data -->
+        <tr>
+            <td style="height: 50px; font-weight: 700; font-size: 20px; background-color: #0000FF; color: #ffffff;" align="left">&nbsp;&nbsp;GROUPS</td>
+            <td style="height:50px;font-style:italic;font-size:larger" align="center">
+                <h3 id="1st_G" contenteditable="true"></h3>
+            </td>
+
+            <td style="height: 50px; font-weight: 700; font-size: 20px; background-color: #00FF00" align="left">&nbsp;&nbsp;GROUPS</td>
+            <td style="height:50px;font-style:italic;font-size:larger" align="center">
+                <h3 id="2nd_G" contenteditable="true"></h3>
+            </td>
+
+            <td style="height: 50px; font-weight: 700; font-size: 20px; background-color: #FF0000" align="left">&nbsp;&nbsp;GROUPS</td>
+            <td style="height:50px;font-style:italic;font-size:larger" align="center">
+                <h3 id="3rd_G" contenteditable="true"></h3>
+            </td>
+        </tr>
+        <!-- Total Artists Data -->
+        <tr>
+            <td style="height: 50px; font-weight: 700; font-size: 20px; background-color: #0000FF; color: #ffffff;" align="left">&nbsp;&nbsp;TOTAL ARTISTS</td>
+            <td style="height:50px;font-style:italic;font-size:larger" align="center">
+                <h3 id="1st_TS" contenteditable="true"></h3>
+            </td>
+
+            <td style="height: 50px; font-weight: 700; font-size: 20px; background-color: #00FF00" align="left">&nbsp;&nbsp;TOTAL ARTISTS</td>
+            <td style="height:50px;font-style:italic;font-size:larger" align="center">
+                <h3 id="2nd_TS" contenteditable="true"></h3>
+            </td>
+
+            <td style="height: 50px; font-weight: 700; font-size: 20px; background-color: #FF0000" align="left">&nbsp;&nbsp;TOTAL ARTISTS</td>
+            <td style="height:50px;font-style:italic;font-size:larger" align="center">
+                <h3 id="3rd_TS" contenteditable="true"></h3>
+            </td>
+        </tr>
+        <!-- Collaborations Data -->
+        <tr>
+            <td style="height: 50px; font-weight: 700; font-size: 20px; background-color: #0000FF; color: #ffffff;" align="left">&nbsp;&nbsp;COLLABORATIONS</td>
+            <td style="height:50px;font-style:italic;font-size:larger" align="center">
+                <h3 id="1st_C" contenteditable="true"></h3>
+            </td>
+
+            <td style="height: 50px; font-weight: 700; font-size: 20px; background-color: #00FF00" align="left">&nbsp;&nbsp;COLLABORATIONS</td>
+            <td style="height:50px;font-style:italic;font-size:larger" align="center">
+                <h3 id="2nd_C" contenteditable="true"></h3>
+            </td>
+
+            <td style="height: 50px; font-weight: 700; font-size: 20px; background-color: #FF0000" align="left">&nbsp;&nbsp;COLLABORATIONS</td>
+            <td style="height:50px;font-style:italic;font-size:larger" align="center">
+                <h3 id="3rd_C" contenteditable="true"></h3>
+            </td>
+        </tr>
+
+        <!-- Text Shift -->
+        <tr style="height:20px">
+            <td style="width:150px" align="center"></td>
+            <td style="width:150px" align="center"></td>
+            <td style="width:150px" align="center"></td>
+            <td style="width:150px" align="center"></td>
+            <td style="width:150px" align="center"></td>
+            <td style="width:150px" align="center"></td>
+        </tr>
+
+        <!-- Datalists-->
+        <tr>
+            <!-- DL1 -->
+            <td colspan="2" rowspan="2" style="height:80px" align="center">
+
+                <input name="1st_label_list" list="1st_label_list" size="30" style="background-color: #0000ff; text-align: center; height: 70px; font-size: 20px; color: #ffffff; font-weight:700" />
+                <datalist id="1st_label_list"></datalist>
+
+                <script>
+
+                    d3.csv("K-pop_node.csv", function (d) {
+                        return {
+                            id_nodo: +d.id,
+                            tipo_nodo: d.type,
+                            nome_nodo: d.name
+                        };
+                    }, function (error, rows) {
+                        data = rows;
+
+                        const first_selection = document.getElementById('1st_label_list');
+
+                        const option_none = document.createElement('option');
+                        option_none.value = " - - - ";
+                        first_selection.appendChild(option_none);
+
+                        count = 0;
+
+                        Object.keys(data).forEach(function (key) {
+                            const option = document.createElement('option');
+                            if (data[key].tipo_nodo == 'label') {
+
+                                if (count > 99)
+                                    option.value = count + ': ' + data[key].nome_nodo;
+                                else if (count > 9)
+                                    option.value = '0' + count + ': ' + data[key].nome_nodo;
+                                else
+                                    option.value = '00' + count + ': ' + data[key].nome_nodo;
+
+                                count = count + 1;
+                                first_selection.appendChild(option);
+                            }
+                        });
+
+                    });
+
+                </script>
+            </td>
+
+            <!-- DL2 -->
+            <td colspan="2" rowspan="2" style="height:80px" align="center">
+
+                <input name="2nd_label_list" list="2nd_label_list" size="30" style="background-color: #00ff00; text-align: center; height: 70px; font-size: 20px; font-weight: 700" />
+                <datalist id="2nd_label_list"></datalist>
+
+                <script>
+
+                    d3.csv("K-pop_node.csv", function (d) {
+                        return {
+                            id_nodo: +d.id,
+                            tipo_nodo: d.type,
+                            nome_nodo: d.name
+                        };
+                    }, function (error, rows) {
+                        data = rows;
+
+                        const second_selection = document.getElementById('2nd_label_list');
+
+                        const option_none = document.createElement('option');
+                        option_none.value = " - - - ";
+                        second_selection.appendChild(option_none);
+
+                        count = 0;
+
+                        Object.keys(data).forEach(function (key) {
+                            const option = document.createElement('option');
+                            if (data[key].tipo_nodo == 'label') {
+
+                                if (count > 99)
+                                    option.value = count + ': ' + data[key].nome_nodo;
+                                else if (count > 9)
+                                    option.value = '0' + count + ': ' + data[key].nome_nodo;
+                                else
+                                    option.value = '00' + count + ': ' + data[key].nome_nodo;
+
+                                count = count + 1;
+                                second_selection.appendChild(option);
+                            }
+                        });
+
+                    });
+
+                </script>
+            </td>
+
+            <!-- DL3 -->
+            <td colspan="2" rowspan="2" style="height:80px" align="center">
+
+                <input name="3rd_label_list" list="3rd_label_list" size="30" style="background-color: #ff0000; text-align: center; height: 70px; font-size: 20px; font-weight: 700" />
+                <datalist id="3rd_label_list"></datalist>
+
+                <script>
+
+                    d3.csv("K-pop_node.csv", function (d) {
+                        return {
+                            id_nodo: +d.id,
+                            tipo_nodo: d.type,
+                            nome_nodo: d.name
+                        };
+                    }, function (error, rows) {
+                        data = rows;
+
+                        const third_selection = document.getElementById('3rd_label_list');
+
+                        const option_none = document.createElement('option');
+                        option_none.value = " - - - ";
+                        third_selection.appendChild(option_none);
+
+                        count = 0;
+
+                        Object.keys(data).forEach(function (key) {
+                            const option = document.createElement('option');
+                            if (data[key].tipo_nodo == 'label') {
+
+                                if (count > 99)
+                                    option.value = count + ': ' + data[key].nome_nodo;
+                                else if (count > 9)
+                                    option.value = '0' + count + ': ' + data[key].nome_nodo;
+                                else
+                                    option.value = '00' + count + ': ' + data[key].nome_nodo;
+
+                                count = count + 1;
+                                third_selection.appendChild(option);
+                            }
+                        });
+
+                    });
+
+                </script>
+
+            </td>
+        </tr>
+
+        <tr>
+
+            <td style="width:200px;font-style:italic;font-size:larger" align="center">Choose the labels you want to compare here</td>
+
+        </tr>
+
+        <tr style="height:20px">
+            <td colspan="7" />
+        </tr>
+
+        <tr id="rc" style="height:1200px">
+            <td colspan="6">
+                <div id="rc_container_1" align="center" />
+            </td>
+            <td align="center" />
+        </tr>
+
+
+    </table>
+
+    <!-- SVG Visualizator -->
+    <!-- default config RadarChart -->
+    <script>
+        RadarChart.defaultConfig.color = function () { };
+        RadarChart.defaultConfig.radius = 5;
+        RadarChart.defaultConfig.w = 1000;
+        RadarChart.defaultConfig.h = 1000;
+        RadarChart.defaultConfig.axisText = true;
+        RadarChart.defaultConfig.factor = 1;
+        RadarChart.defaultConfig.factorLegend = 1;
+        RadarChart.defaultConfig.levels = 6;
+        RadarChart.defaultConfig.circles = false;
+    </script>
+
+    <!-- SVG RadarChart - Responsive to Datalist Selection-->
+    <script>
+
+        var nodes;
+        var edges;
+        var data;
+
+        var chart;
+        var svg;
+        var game;
+
+        var labels;
+        var label_groups;
+        var max_Labels;
+        var nominal_rankings;
+        var scaled_rankings;
+
+        let triggered = false;
+
+        // Visualizing SVG
+
+        if (nodes == undefined) {
+
+            triggered = true;
+
+            d3.csv("K-pop_node.csv", function (d) {
+                return {
+                    id_nodo: +d.id,
+                    tipo_nodo: d.type,
+                    nome_nodo: d.name
+                };
+            }, function (error, rowsN) {
+                nodes = rowsN;
+
+                if (edges == undefined) {
+
+                    d3.csv("K-pop_edge.csv", function (d) {
+                        return {
+                            id_source: +d.source,
+                            id_target: +d.target
+                        };
+                    }, function (error, rowsE) {
+                        edges = rowsE;
+
+                        // populate rankings
+                        labels = new Array();
+
+                        // find labels
+                        function defineLabels() {
+
+                            Object.keys(nodes).forEach(function (keyNodes) {
+                                if (nodes[keyNodes].tipo_nodo == 'label')
+                                    labels.push(nodes[keyNodes].id_nodo);
+                            });
+
+                        }
+                        defineLabels();
+
+                        function setupStructures() {
+
+                            nominal_rankings = new Array(labels.length).fill(0);
+                            scaled_rankings = new Array(labels.length).fill(0);
+                            label_groups = new Array(labels.length).fill(0);
+                            max_Labels = new Array(6).fill(0);
+
+                            Object.keys(labels).forEach(function (key) {
+                                nominal_rankings[key] = new Array(7).fill(0);
+                                scaled_rankings[key] = new Array(7).fill(0);
+                                label_groups[key] = new Array();
+
+                                nominal_rankings[key][0] = labels[key];
+                                scaled_rankings[key][0] = labels[key];
+                            });
+
+                            Object.keys(max_Labels).forEach(function (key) {
+                                max_Labels[key] = new Array(2).fill(0);
+                            });
+
+                        }
+                        setupStructures();
+
+                        // find male artists that make part of a group
+                        function maleArtistsGroup(keyGroupNode) {
+
+                            var count_MAG = 0;
+
+                            Object.keys(edges).forEach(function (keyEdges) {
+
+                                var source;
+                                var target;
+
+                                if (edges[keyEdges].id_source == keyGroupNode)
+                                    target = edges[keyEdges].id_target;
+
+                                if (edges[keyEdges].id_target == keyGroupNode)
+                                    source = edges[keyEdges].id_source
+
+                                if (target != undefined) {
+                                    Object.keys(nodes).forEach(function (keyNodes) {
+                                        if ((nodes[keyNodes].id_nodo == target) &&
+                                            (nodes[keyNodes].tipo_nodo == 'male'))
+                                            count_MAG = count_MAG + 1;
+                                    });
+                                }
+
+                                if (source != undefined) {
+                                    Object.keys(nodes).forEach(function (keyNodes) {
+                                        if ((nodes[keyNodes].id_nodo == source) &&
+                                            (nodes[keyNodes].tipo_nodo == 'male'))
+                                            count_MAG = count_MAG + 1;
+                                    });
+                                }
+
+                            });
+
+                            return count_MAG;
+                        }
+
+                        // find female artists that make part of a group
+                        function femaleArtistsGroup(keyGroupNode) {
+
+                            var count_FAG = 0;
+
+                            Object.keys(edges).forEach(function (keyEdges) {
+
+                                var source;
+                                var target;
+
+                                if (edges[keyEdges].id_source == keyGroupNode)
+                                    target = edges[keyEdges].id_target;
+
+                                if (edges[keyEdges].id_target == keyGroupNode)
+                                    source = edges[keyEdges].id_source
+
+                                if (target != undefined) {
+                                    Object.keys(nodes).forEach(function (keyNodes) {
+                                        if ((nodes[keyNodes].id_nodo == target) &&
+                                            (nodes[keyNodes].tipo_nodo == 'female'))
+                                            count_FAG = count_FAG + 1;
+                                    });
+                                }
+
+                                if (source != undefined) {
+                                    Object.keys(nodes).forEach(function (keyNodes) {
+                                        if ((nodes[keyNodes].id_nodo == source) &&
+                                            (nodes[keyNodes].tipo_nodo == 'female'))
+                                            count_FAG = count_FAG + 1;
+                                    });
+                                }
+
+                            });
+
+                            return count_FAG;
+
+                        }
+
+                        // find artists that make part of a group
+                        function artistsGroup(keyGroupNode) {
+
+                            var count_AG = 0;
+
+                            Object.keys(edges).forEach(function (keyEdges) {
+
+                                var source;
+                                var target;
+
+                                if (edges[keyEdges].id_source == keyGroupNode)
+                                    target = edges[keyEdges].id_target;
+
+                                if (edges[keyEdges].id_target == keyGroupNode)
+                                    source = edges[keyEdges].id_source
+
+                                if (target != undefined) {
+                                    Object.keys(nodes).forEach(function (keyNodes) {
+                                        if ((nodes[keyNodes].id_nodo == target) &&
+                                            (nodes[keyNodes].tipo_nodo == 'male' || nodes[keyNodes].tipo_nodo == 'female' || nodes[keyNodes].tipo_nodo == 'person'))
+                                            count_AG = count_AG + 1;
+                                    });
+                                }
+
+                                if (source != undefined) {
+                                    Object.keys(nodes).forEach(function (keyNodes) {
+                                        if ((nodes[keyNodes].id_nodo == source) &&
+                                            (nodes[keyNodes].tipo_nodo == 'male' || nodes[keyNodes].tipo_nodo == 'female' || nodes[keyNodes].tipo_nodo == 'person'))
+                                            count_AG = count_AG + 1;
+                                    });
+                                }
+
+                            });
+
+                            return count_AG;
+
+                        }
+
+                        // find groups managed by labels
+                        function labelsXgroups() {
+
+                            Object.keys(labels).forEach(function (keyLabel) {
+
+                                Object.keys(edges).forEach(function (keyEdges) {
+
+                                    var label = labels[keyLabel];
+
+                                    var source;
+                                    var target;
+
+                                    if (edges[keyEdges].id_source == label)
+                                        target = edges[keyEdges].id_target;
+
+                                    if (edges[keyEdges].id_target == label)
+                                        source = edges[keyEdges].id_source
+
+                                    if (target != undefined) {
+                                        Object.keys(nodes).forEach(function (keyNodes) {
+                                            if ((nodes[keyNodes].id_nodo == target) && (nodes[keyNodes].tipo_nodo == 'group'))
+                                                label_groups[keyLabel].push(target);
+                                        });
+                                    }
+
+                                    if (source != undefined) {
+                                        Object.keys(nodes).forEach(function (keyNodes) {
+                                            if ((nodes[keyNodes].id_nodo == source) && (nodes[keyNodes].tipo_nodo == 'group'))
+                                                label_groups[keyLabel].push(source);
+                                        });
+                                    }
+
+                                });
+
+                            });
+                        }
+                        labelsXgroups();
+
+                        // find male artists managed by label
+                        function countMale(keyLabelNode) {
+                            var count_Male = 0;
+
+                            Object.keys(edges).forEach(function (keyEdges) {
+
+                                var source;
+                                var target;
+
+                                if (edges[keyEdges].id_source == keyLabelNode)
+                                    target = edges[keyEdges].id_target;
+
+                                if (edges[keyEdges].id_target == keyLabelNode)
+                                    source = edges[keyEdges].id_source
+
+                                if (target != undefined) {
+                                    Object.keys(nodes).forEach(function (keyNode) {
+                                        if ((nodes[keyNode].id_nodo == target) && (nodes[keyNode].tipo_nodo == 'male'))
+                                            count_Male = count_Male + 1;
+                                    });
+                                }
+
+                                if (source != undefined) {
+                                    Object.keys(nodes).forEach(function (keyNode) {
+                                        if ((nodes[keyNode].id_nodo == source) && (nodes[keyNode].tipo_nodo == 'male'))
+                                            count_Male = count_Male + 1;
+                                    });
+                                }
+
+                            });
+
+                            var groups = [];
+                            Object.keys(labels).forEach(function (keyLabel) {
+                                if (labels[keyLabel] == keyLabelNode)
+                                    groups = label_groups[keyLabel];
+                            });
+
+                            Object.keys(groups).forEach(function (keyGroup) {
+                                count_Male = count_Male + maleArtistsGroup(groups[keyGroup]);
+                            });
+
+                            return count_Male;
+                        }
+
+                        // find female artists managed by label
+                        function countFemale(keyLabelNode) {
+                            var count_Female = 0;
+
+                            Object.keys(edges).forEach(function (keyEdges) {
+
+                                var source;
+                                var target;
+
+                                if (edges[keyEdges].id_source == keyLabelNode)
+                                    target = edges[keyEdges].id_target;
+
+                                if (edges[keyEdges].id_target == keyLabelNode)
+                                    source = edges[keyEdges].id_source
+
+                                if (target != undefined) {
+                                    Object.keys(nodes).forEach(function (keyNodes) {
+                                        if ((nodes[keyNodes].id_nodo == target) && (nodes[keyNodes].tipo_nodo == 'female'))
+                                            count_Female = count_Female + 1;
+                                    });
+                                }
+
+                                if (source != undefined) {
+                                    Object.keys(nodes).forEach(function (keyNodes) {
+                                        if ((nodes[keyNodes].id_nodo == source) && (nodes[keyNodes].tipo_nodo == 'female'))
+                                            count_Female = count_Female + 1;
+                                    });
+                                }
+
+                            });
+
+                            var groups = [];
+                            Object.keys(labels).forEach(function (keyLabel) {
+                                if (labels[keyLabel] == keyLabelNode)
+                                    groups = label_groups[keyLabel];
+                            });
+
+                            Object.keys(groups).forEach(function (keyGroup) {
+                                count_Female = count_Female + femaleArtistsGroup(groups[keyGroup]);
+                            });
+
+                            return count_Female;
+                        }
+
+                        // find groups managed by label
+                        function countGroups(keyLabelNode) {
+                            var count_Groups = 0;
+
+                            Object.keys(edges).forEach(function (keyEdges) {
+
+                                var source;
+                                var target;
+
+                                if (edges[keyEdges].id_source == keyLabelNode)
+                                    target = edges[keyEdges].id_target;
+
+                                if (edges[keyEdges].id_target == keyLabelNode)
+                                    source = edges[keyEdges].id_source
+
+                                if (target != undefined) {
+                                    Object.keys(nodes).forEach(function (keyNodes) {
+                                        if ((nodes[keyNodes].id_nodo == target) && (nodes[keyNodes].tipo_nodo == 'group'))
+                                            count_Groups = count_Groups + 1;
+                                    });
+                                }
+
+                                if (source != undefined) {
+                                    Object.keys(nodes).forEach(function (keyNodes) {
+                                        if ((nodes[keyNodes].id_nodo == source) && (nodes[keyNodes].tipo_nodo == 'group'))
+                                            count_Groups = count_Groups + 1;
+                                    });
+                                }
+
+                            });
+
+                            return count_Groups;
+                        }
+
+                        // find SOLOISTS that don't make part of a group managed by label
+                        function countSA(keyLabelNode) {
+                            var count_SA = 0;
+
+                            Object.keys(edges).forEach(function (keyEdges) {
+
+                                var source;
+                                var target;
+
+                                if (edges[keyEdges].id_source == keyLabelNode)
+                                    target = edges[keyEdges].id_target;
+
+                                if (edges[keyEdges].id_target == keyLabelNode)
+                                    source = edges[keyEdges].id_source
+
+                                if (target != undefined) {
+                                    Object.keys(nodes).forEach(function (keyNodes) {
+                                        if ((nodes[keyNodes].id_nodo == target) &&
+                                            (nodes[keyNodes].tipo_nodo == 'male' || nodes[keyNodes].tipo_nodo == 'female' || nodes[keyNodes].tipo_nodo == 'person'))
+                                            count_SA = count_SA + 1;
+                                    });
+                                }
+
+                                if (source != undefined) {
+                                    Object.keys(nodes).forEach(function (keyNodes) {
+                                        if ((nodes[keyNodes].id_nodo == source) &&
+                                            (nodes[keyNodes].tipo_nodo == 'male' || nodes[keyNodes].tipo_nodo == 'female' || nodes[keyNodes].tipo_nodo == 'person'))
+                                            count_SA = count_SA + 1;
+                                    });
+                                }
+
+                            });
+
+                            return count_SA;
+                        }
+
+                        // find total management of a label
+                        function countTS(keyLabelNode) {
+                            var count_TS = 0;
+
+                            count_TS = count_TS + countSA(keyLabelNode);
+
+                            var groups = [];
+                            Object.keys(labels).forEach(function (keyLabel) {
+                                if (labels[keyLabel] == keyLabelNode)
+                                    groups = label_groups[keyLabel];
+                            });
+
+                            Object.keys(groups).forEach(function (keyGroup) {
+                                count_TS = count_TS + artistsGroup(groups[keyGroup]);
+                            });
+
+                            return count_TS;
+                        }
+
+                        // find collaborations of a label
+                        function countCollab(keyLabelNode) {
+                            var count_Collab = 0;
+
+                            Object.keys(edges).forEach(function (keyEdges) {
+
+                                var source;
+                                var target;
+
+                                if (edges[keyEdges].id_source == keyLabelNode)
+                                    target = edges[keyEdges].id_target;
+
+                                if (edges[keyEdges].id_target == keyLabelNode)
+                                    source = edges[keyEdges].id_source
+
+                                if (target != undefined) {
+                                    Object.keys(nodes).forEach(function (keyNode) {
+                                        if ((nodes[keyNode].id_nodo == target) && (nodes[keyNode].tipo_nodo == 'label'))
+                                            count_Collab = count_Collab + 1;
+                                    });
+                                }
+
+                                if (source != undefined) {
+                                    Object.keys(nodes).forEach(function (keyNode) {
+                                        if ((nodes[keyNode].id_nodo == source) && (nodes[keyNode].tipo_nodo == 'label'))
+                                            count_Collab = count_Collab + 1;
+                                    });
+                                }
+
+                            });
+
+                            return count_Collab;
+                        }
+
+                        // table nominal data of counted by label
+                        function populateNominal() {
+
+                            Object.keys(labels).forEach(function (keyLabel) {
+                                nominal_rankings[keyLabel][1] = countMale(labels[keyLabel]);
+                                nominal_rankings[keyLabel][2] = countFemale(labels[keyLabel]);
+                                nominal_rankings[keyLabel][3] = countSA(labels[keyLabel]);
+                                nominal_rankings[keyLabel][4] = countGroups(labels[keyLabel]);
+                                nominal_rankings[keyLabel][5] = countTS(labels[keyLabel]);
+                                nominal_rankings[keyLabel][6] = countCollab(labels[keyLabel]);
+                            });
+
+                        }
+                        populateNominal();
+
+                        // table scaled data of nominal data
+                        function populateScaled() {
+
+                            var min_Male = 10000;
+                            var min_Female = 10000;
+                            var min_SA = 10000;
+                            var min_Groups = 10000;
+                            var min_TS = 10000;
+                            var min_Collab = 10000;
+
+                            var max_Male = 0;
+                            var max_Female = 0;
+                            var max_SA = 0;
+                            var max_Groups = 0;
+                            var max_TS = 0;
+                            var max_Collab = 0;
+
+                            Object.keys(nominal_rankings).forEach(function (keyLabel) {
+                                if (nominal_rankings[keyLabel][1] < min_Male)
+                                    min_Male = nominal_rankings[keyLabel][1];
+                                if (nominal_rankings[keyLabel][1] > max_Male)
+                                    max_Male = nominal_rankings[keyLabel][1];
+
+                                if (nominal_rankings[keyLabel][2] < min_Female)
+                                    min_Female = nominal_rankings[keyLabel][2];
+                                if (nominal_rankings[keyLabel][2] > max_Female)
+                                    max_Female = nominal_rankings[keyLabel][2];
+
+                                if (nominal_rankings[keyLabel][3] < min_SA)
+                                    min_SA = nominal_rankings[keyLabel][3];
+                                if (nominal_rankings[keyLabel][3] > max_SA)
+                                    max_SA = nominal_rankings[keyLabel][3];
+
+                                if (nominal_rankings[keyLabel][4] < min_Groups)
+                                    min_Groups = nominal_rankings[keyLabel][4];
+                                if (nominal_rankings[keyLabel][4] > max_Groups)
+                                    max_Groups = nominal_rankings[keyLabel][4];
+
+                                if (nominal_rankings[keyLabel][5] < min_TS)
+                                    min_TS = nominal_rankings[keyLabel][5];
+                                if (nominal_rankings[keyLabel][5] > max_TS)
+                                    max_TS = nominal_rankings[keyLabel][5];
+
+                                if (nominal_rankings[keyLabel][6] < min_Collab)
+                                    min_Collab = nominal_rankings[keyLabel][6];
+                                if (nominal_rankings[keyLabel][6] > max_Collab)
+                                    max_Collab = nominal_rankings[keyLabel][6];
+                            });
+
+                            scale_Male = d3.scale.linear()
+                                .domain([min_Male, max_Male])
+                                .range([0, 100]);
+
+                            scale_Female = d3.scale.linear()
+                                .domain([min_Female, max_Female])
+                                .range([0, 100]);
+
+                            scale_SA = d3.scale.linear()
+                                .domain([min_SA, max_SA])
+                                .range([0, 100]);
+
+                            scale_Groups = d3.scale.linear()
+                                .domain([min_Groups, max_Groups])
+                                .range([0, 100]);
+
+                            scale_TS = d3.scale.linear()
+                                .domain([min_TS, max_TS])
+                                .range([0, 100]);
+
+                            scale_Collab = d3.scale.linear()
+                                .domain([min_Collab, max_Collab])
+                                .range([0, 100]);
+
+                            Object.keys(scaled_rankings).forEach(function (keyLabel) {
+                                scaled_rankings[keyLabel][1] = scale_Male(nominal_rankings[keyLabel][1]);
+                                scaled_rankings[keyLabel][2] = scale_Female(nominal_rankings[keyLabel][2]);
+                                scaled_rankings[keyLabel][3] = scale_SA(nominal_rankings[keyLabel][3]);
+                                scaled_rankings[keyLabel][4] = scale_Groups(nominal_rankings[keyLabel][4]);
+                                scaled_rankings[keyLabel][5] = scale_TS(nominal_rankings[keyLabel][5]);
+                                scaled_rankings[keyLabel][6] = scale_Collab(nominal_rankings[keyLabel][6]);
+                            });
+
+                            max_Labels[0][0] = max_Male;
+                            max_Labels[1][0] = max_Female;
+                            max_Labels[2][0] = max_SA;
+                            max_Labels[3][0] = max_Groups;
+                            max_Labels[4][0] = max_TS;
+                            max_Labels[5][0] = max_Collab;
+
+                        }
+                        populateScaled();
+
+                        // find best label by attribute
+                        function findMax() {
+
+                            Object.keys(nominal_rankings).forEach(function (keyLabel) {
+                                if (nominal_rankings[keyLabel][1] == max_Labels[0][0])
+                                    max_Labels[0][1] = keyLabel;
+
+                                if (nominal_rankings[keyLabel][2] == max_Labels[1][0])
+                                    max_Labels[1][1] = keyLabel;
+
+                                if (nominal_rankings[keyLabel][3] == max_Labels[2][0])
+                                    max_Labels[2][1] = keyLabel;
+
+                                if (nominal_rankings[keyLabel][4] == max_Labels[3][0])
+                                    max_Labels[3][1] = keyLabel;
+
+                                if (nominal_rankings[keyLabel][5] == max_Labels[4][0])
+                                    max_Labels[4][1] = keyLabel;
+
+                                if (nominal_rankings[keyLabel][6] == max_Labels[5][0])
+                                    max_Labels[5][1] = keyLabel;
+                            });
+                        }
+                        findMax();
+
+                        // best labels by attribute - future use
+                        best_Labels = [
+
+                            {
+                                className: 'best_M',
+                                label: 'bestLabel_MALE',
+                                axes: [
+                                    { axis: "MALE", value: scaled_rankings[max_Labels[0][1]][1] },
+                                    { axis: "FEMALE", value: scaled_rankings[max_Labels[0][1]][2] },
+                                    { axis: "SOLOISTS", value: scaled_rankings[max_Labels[0][1]][3] },
+                                    { axis: "GROUPS", value: scaled_rankings[max_Labels[0][1]][4] },
+                                    { axis: "TOTAL SIZE", value: scaled_rankings[max_Labels[0][1]][5] },
+                                    { axis: "COLLABORATIONS", value: scaled_rankings[max_Labels[0][1]][6] }
+                                ]
+                            },
+                            {
+                                className: 'best_F',
+                                label: 'bestLabel_FEMALE',
+                                axes: [
+                                    { axis: "MALE", value: scaled_rankings[max_Labels[1][1]][1] },
+                                    { axis: "FEMALE", value: scaled_rankings[max_Labels[1][1]][2] },
+                                    { axis: "SOLOISTS", value: scaled_rankings[max_Labels[1][1]][3] },
+                                    { axis: "GROUPS", value: scaled_rankings[max_Labels[1][1]][4] },
+                                    { axis: "TOTAL SIZE", value: scaled_rankings[max_Labels[1][1]][5] },
+                                    { axis: "COLLABORATIONS", value: scaled_rankings[max_Labels[1][1]][6] }
+                                ]
+                            },
+                            {
+                                className: 'best_SA',
+                                label: 'bestLabel_SINGLE-ARTISTS',
+                                axes: [
+                                    { axis: "MALE", value: scaled_rankings[max_Labels[2][1]][1] },
+                                    { axis: "FEMALE", value: scaled_rankings[max_Labels[2][1]][2] },
+                                    { axis: "SOLOISTS", value: scaled_rankings[max_Labels[2][1]][3] },
+                                    { axis: "GROUPS", value: scaled_rankings[max_Labels[2][1]][4] },
+                                    { axis: "TOTAL SIZE", value: scaled_rankings[max_Labels[2][1]][5] },
+                                    { axis: "COLLABORATIONS", value: scaled_rankings[max_Labels[2][1]][6] }
+                                ]
+                            },
+                            {
+                                className: 'best_G',
+                                label: 'bestLabel_GROUPS',
+                                axes: [
+                                    { axis: "MALE", value: scaled_rankings[max_Labels[3][1]][1] },
+                                    { axis: "FEMALE", value: scaled_rankings[max_Labels[3][1]][2] },
+                                    { axis: "SOLOISTS", value: scaled_rankings[max_Labels[3][1]][3] },
+                                    { axis: "GROUPS", value: scaled_rankings[max_Labels[3][1]][4] },
+                                    { axis: "TOTAL SIZE", value: scaled_rankings[max_Labels[3][1]][5] },
+                                    { axis: "COLLABORATIONS", value: scaled_rankings[max_Labels[3][1]][6] }
+                                ]
+                            },
+                            {
+                                className: 'best_TS',
+                                label: 'bestLabel_TOTAL-SIZE',
+                                axes: [
+                                    { axis: "MALE", value: scaled_rankings[max_Labels[4][1]][1] },
+                                    { axis: "FEMALE", value: scaled_rankings[max_Labels[4][1]][2] },
+                                    { axis: "SOLOISTS", value: scaled_rankings[max_Labels[4][1]][3] },
+                                    { axis: "GROUPS", value: scaled_rankings[max_Labels[4][1]][4] },
+                                    { axis: "TOTAL SIZE", value: scaled_rankings[max_Labels[4][1]][5] },
+                                    { axis: "COLLABORATIONS", value: scaled_rankings[max_Labels[4][1]][6] }
+                                ]
+                            },
+                            {
+                                className: 'best_Collab',
+                                label: 'bestLabel_COLLABORATIONS',
+                                axes: [
+                                    { axis: "MALE", value: scaled_rankings[max_Labels[5][1]][1] },
+                                    { axis: "FEMALE", value: scaled_rankings[max_Labels[5][1]][2] },
+                                    { axis: "SOLOISTS", value: scaled_rankings[max_Labels[5][1]][3] },
+                                    { axis: "GROUPS", value: scaled_rankings[max_Labels[5][1]][4] },
+                                    { axis: "TOTAL SIZE", value: scaled_rankings[max_Labels[5][1]][5] },
+                                    { axis: "COLLABORATIONS", value: scaled_rankings[max_Labels[5][1]][6] }
+                                ]
+                            }
+                        ];
+
+                        // foo dataset displayed on RadarChart
+                        dataSet = [
+                            {
+                                className: 'selected_none',
+                                axes: [
+                                    { axis: "MALE", value: 1 },
+                                    { axis: "FEMALE", value: 1 },
+                                    { axis: "SOLOISTS", value: 1 },
+                                    { axis: "GROUPS", value: 1 },
+                                    { axis: "TOTAL SIZE", value: 1 },
+                                    { axis: "COLLABORATIONS", value: 1 }
+                                ]
+                            }
+                        ];
+
+                        // setup RadarChart
+                        chart = RadarChart.chart();
+                        cfg = chart.config();
+                        svg = d3.select('div#rc_container_1').append('svg')
+                            .attr('width', cfg.w)
+                            .attr('height', cfg.h)
+                            .attr('id', 'SVG_RC');
+
+                        // render
+                        function render() {
+
+                            // Responsive Area
+
+                            // find "nodes" idx label by "labels" idx label
+                            function findIdx_Nodes(ID_Label) {
+                                var idx;
+
+                                Object.keys(nodes).forEach(function (keyNodes) {
+                                    if (nodes[keyNodes].id_nodo == ID_Label)
+                                        idx = keyNodes;
+                                });
+
+                                return idx;
+                            }
+
+                            // find "labels" idx label by "nodes" idx label
+                            function findIdx_Labels(labelNode) {
+                                var idx;
+
+                                Object.keys(labels).forEach(function (keyLabel) {
+                                    if (labels[keyLabel] == nodes[labelNode].id_nodo)
+                                        idx = keyLabel;
+                                });
+
+                                return idx;
+                            }
+
+                            // LabelNode Identifier by Label Name
+                            function data_labelNode(labelName) {
+
+                                var raw_data = [];
+                                var data;
+                                let name = labelName;
+
+                                Object.keys(nodes).forEach(function (keyNodes) {
+
+                                    if (nodes[keyNodes].nome_nodo == name) {
+
+                                        let idx_Nodes = findIdx_Labels(keyNodes);
+                                        let row_label = scaled_rankings[idx_Nodes];
+
+                                        Object.keys(row_label).forEach(function (key) {
+                                            raw_data.push(row_label[key])
+                                        });
+
+                                        raw_data.shift();
+
+                                    }
+                                });
+
+                                if (raw_data[0] != undefined) {
+                                    data = {
+                                        className: 'selected_xx',
+                                        axes: [
+                                            { axis: "MALE", value: raw_data[0] },
+                                            { axis: "FEMALE", value: raw_data[1] },
+                                            { axis: "SOLOISTS", value: raw_data[2] },
+                                            { axis: "GROUPS", value: raw_data[3] },
+                                            { axis: "TOTAL SIZE", value: raw_data[4] },
+                                            { axis: "COLLABORATIONS", value: raw_data[5] }
+                                        ]
+                                    };
+                                }
+
+                                return data;
+                            }
+
+                            // building new dataset updated
+                            let l_01_input_nodeName = document.getElementsByName('1st_label_list')[0].value.slice(5);
+                            let l_02_input_nodeName = document.getElementsByName('2nd_label_list')[0].value.slice(5);
+                            let l_03_input_nodeName = document.getElementsByName('3rd_label_list')[0].value.slice(5);
+
+                            let data_l_01 = data_labelNode(l_01_input_nodeName);
+                            let data_l_02 = data_labelNode(l_02_input_nodeName);
+                            let data_l_03 = data_labelNode(l_03_input_nodeName);
+
+                            var new_dataSet = [];
+
+                            // updating dataset and info visualized
+                            if (data_l_01 != undefined) {
+                                data_l_01.className = 'selected_01';
+                                new_dataSet.push(data_l_01);
+
+                                document.getElementById('1st_L').innerHTML = document.getElementsByName('1st_label_list')[0].value.split(':')[0];
+                                idx_getterValue = parseInt(document.getElementsByName('1st_label_list')[0].value.split(':')[0]);
+
+                                document.getElementById('1st_M').innerHTML = nominal_rankings[idx_getterValue][1];
+                                document.getElementById('1st_F').innerHTML = nominal_rankings[idx_getterValue][2];
+                                document.getElementById('1st_SA').innerHTML = nominal_rankings[idx_getterValue][3];
+                                document.getElementById('1st_G').innerHTML = nominal_rankings[idx_getterValue][4];
+                                document.getElementById('1st_TS').innerHTML = nominal_rankings[idx_getterValue][5];
+                                document.getElementById('1st_C').innerHTML = nominal_rankings[idx_getterValue][6];
+
+                            } else {
+
+                                document.getElementById('1st_L').innerHTML = '';
+                                document.getElementById('1st_M').innerHTML = '';
+                                document.getElementById('1st_F').innerHTML = '';
+                                document.getElementById('1st_SA').innerHTML = '';
+                                document.getElementById('1st_G').innerHTML = '';
+                                document.getElementById('1st_TS').innerHTML = '';
+                                document.getElementById('1st_C').innerHTML = '';
+                            }
+
+                            if (data_l_02 != undefined) {
+                                data_l_02.className = 'selected_02';
+                                new_dataSet.push(data_l_02);
+
+                                document.getElementById('2nd_L').innerHTML = document.getElementsByName('2nd_label_list')[0].value.split(':')[0];
+                                idx_getterValue = parseInt(document.getElementsByName('2nd_label_list')[0].value.split(':')[0]);
+
+                                document.getElementById('2nd_M').innerHTML = nominal_rankings[idx_getterValue][1];
+                                document.getElementById('2nd_F').innerHTML = nominal_rankings[idx_getterValue][2];
+                                document.getElementById('2nd_SA').innerHTML = nominal_rankings[idx_getterValue][3];
+                                document.getElementById('2nd_G').innerHTML = nominal_rankings[idx_getterValue][4];
+                                document.getElementById('2nd_TS').innerHTML = nominal_rankings[idx_getterValue][5];
+                                document.getElementById('2nd_C').innerHTML = nominal_rankings[idx_getterValue][6];
+
+                            } else {
+
+                                document.getElementById('2nd_L').innerHTML = '';
+                                document.getElementById('2nd_M').innerHTML = '';
+                                document.getElementById('2nd_F').innerHTML = '';
+                                document.getElementById('2nd_SA').innerHTML = '';
+                                document.getElementById('2nd_G').innerHTML = '';
+                                document.getElementById('2nd_TS').innerHTML = '';
+                                document.getElementById('2nd_C').innerHTML = '';
+                            }
+
+                            if (data_l_03 != undefined) {
+                                data_l_03.className = 'selected_03';
+                                new_dataSet.push(data_l_03);
+
+                                document.getElementById('3rd_L').innerHTML = document.getElementsByName('3rd_label_list')[0].value.split(':')[0];
+                                idx_getterValue = parseInt(document.getElementsByName('3rd_label_list')[0].value.split(':')[0]);
+
+                                document.getElementById('3rd_M').innerHTML = nominal_rankings[idx_getterValue][1];
+                                document.getElementById('3rd_F').innerHTML = nominal_rankings[idx_getterValue][2];
+                                document.getElementById('3rd_SA').innerHTML = nominal_rankings[idx_getterValue][3];
+                                document.getElementById('3rd_G').innerHTML = nominal_rankings[idx_getterValue][4];
+                                document.getElementById('3rd_TS').innerHTML = nominal_rankings[idx_getterValue][5];
+                                document.getElementById('3rd_C').innerHTML = nominal_rankings[idx_getterValue][6];
+
+                            } else {
+
+                                document.getElementById('3rd_L').innerHTML = '';
+                                document.getElementById('3rd_M').innerHTML = '';
+                                document.getElementById('3rd_F').innerHTML = '';
+                                document.getElementById('3rd_SA').innerHTML = '';
+                                document.getElementById('3rd_G').innerHTML = '';
+                                document.getElementById('3rd_TS').innerHTML = '';
+                                document.getElementById('3rd_C').innerHTML = '';
+                            }
+
+                            // replace new dataset
+                            dataSet = new_dataSet;
+
+                            // if no one is selected
+                            if (dataSet[0] == undefined) {
+                                dataSet[0] = {
+                                    className: 'selected_none',
+                                    axes: [
+                                        { axis: "MALE", value: 1 },
+                                        { axis: "FEMALE", value: 1 },
+                                        { axis: "SOLOISTS", value: 1 },
+                                        { axis: "GROUPS", value: 1 },
+                                        { axis: "TOTAL SIZE", value: 1 },
+                                        { axis: "COLLABORATIONS", value: 1 }
+                                    ]
+                                };
+                            }
+
+                            // svg setup
+                            var game;
+                            game = svg.selectAll('g.game').data([dataSet]);
+                            game.enter().append('g').classed('game', 1);
+                            game.call(chart);
+                            setTimeout(render, 300);
+
+                            svg_legendTexts = document.getElementsByClassName('legend');
+
+                            svg_legendTexts[0].style.fontSize = 'x-large';
+                            svg_legendTexts[0].setAttribute('y', 0);
+
+                            svg_legendTexts[1].style.fontSize = 'x-large';
+                            svg_legendTexts[1].setAttribute('x', 0);
+
+                            svg_legendTexts[2].style.fontSize = 'x-large';
+                            svg_legendTexts[2].setAttribute('x', 0);
+
+                            svg_legendTexts[3].style.fontSize = 'x-large';
+                            svg_legendTexts[3].setAttribute('y', 1000);
+
+                            svg_legendTexts[4].style.fontSize = 'x-large';
+                            svg_legendTexts[4].setAttribute('x', 970);
+                            svg_legendTexts[4].firstChild.data = 'TOTAL';
+
+                            svg_legendTexts[5].style.fontSize = 'x-large';
+                            svg_legendTexts[5].setAttribute('x', 1000);
+                            svg_legendTexts[5].firstChild.data = 'COLLABS';
+                        }
+                        render();
+                    });
+                }
+            });
+        }
+
+
+    </script>
+
+</body>
+
+</html>
+
